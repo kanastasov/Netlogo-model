@@ -1,18 +1,34 @@
 breed [wasps wasp]
 breed [colonies colony]
+;turtles-own [energy] ;;both the wasps and the colonies has energy
+wasps-own [gender energy] ;;female, male
 
 
 to setup
    clear-all ;;clears the interface from the previous setup
    set-default-shape wasps "bug"
    set-default-shape colonies "house" ;circle 2
+  ;ask patch 0  1 [ sprout-colonies 1 ]
   create-wasps numberOfWasps
   [
-   set color grey
-   setxy random-xcor random-ycor ;random x,y coordinates
-   set pen-mode "up"
-   ;set heading 0 ; move the wasps up 
-   set label who ;set the count of the wasp from 0 display it on the interface
+       set size 1.2  ;; easier to see
+       setxy random-xcor random-ycor ;random x,y coordinates
+       set pen-mode "up"
+       ;set label who ;set the count of the wasp from 0 display it on the interface
+       set energy 10; random (2 * 5)
+       ifelse (random 100 < numberOfWasps)
+       [ 
+         set color   red                  ;;female set to red color
+         set gender "female"
+           
+       ]        
+       [ set color blue                   ;;male set to blue color
+         set gender "male"
+        
+       ]
+    
+   
+   ;set energy random (2 * 5)
   
     
   ]
@@ -20,6 +36,8 @@ to setup
   create-colonies numberOfWaspColonies
   [
     set color white
+    set size 1.6  ;; easier to see
+    set label who ;set the count of the wasp from 0 display it on the interface
     ;set xcor 0
     ;set ycor 0
     setxy random-xcor random-ycor ;random x,y coordinates
@@ -33,7 +51,7 @@ to setup
   ]
  
   
-  
+  display-labels
   
 end
 
@@ -53,14 +71,19 @@ to go
   
    ask wasps 
   [
-   let dice random 3
-   let change (dice - 1)
-   forward 1  
-   ;let target one-of link-neighbors
-   let target one-of out-link-neighbors
-   ;face target
-   ;let current-wasp self
-   
+  ; let dice random 3
+  ; let change (dice - 1)
+  ; forward 1  
+  ;let target one-of link-neighbors
+  move
+  let target one-of out-link-neighbors
+  set energy energy - 1
+  feed
+  display-labels
+  death
+  ;face target
+  ;let current-wasp self
+  ;set energy energy - 1
   ; ask colonies with [distance current-wasp < 1] 
   ;[
    ; die
@@ -90,15 +113,68 @@ to go
   ;[
   ; die 
   ;] 
-  
+
 end
 
+;to reproduce-wasps  ;; sheep procedure
+;  if random-float 100 < wasps-reproduce [  ;; throw "dice" to see if you will reproduce
+;    ;set energy (energy / 2)                ;; divide energy between parent and offspring
+;    hatch 1 [ rt random-float 360 fd 1 ]   ;; hatch an offspring and move it forward 1 step
+;  ]
+;end
+
+
+to move  ;; turtle procedure
+  rt random 50
+  lt random 50
+  fd 1
+  ;set heading 0 ; move the wasps up 
+end
+
+to display-labels
+  ask wasps [ set label "" ]
+  if show-energy? [
+    ask wasps [ set label round energy ]
+    
+  ]
+end
+
+to feed
+ask wasps
+[
+  if pcolor = black
+  [
+   set pcolor  blue
+   set energy energy + 10 
+  ]
+  
+  ifelse show-energy?
+  [
+    set label energy
+  ]
+  [
+    set label ""
+  ]  
+]  
+end
+
+to grow-food  ;; patch procedure
+ ask patches [ ;; 3 out of 100 times, the patch color is set to green
+    if random 100 < 3 [ set pcolor black ]
+  ]
+end
+
+
+to death  ;; turtle procedure
+  ;; when energy dips below zero, die
+  if energy < 0 [ die ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
-10
-649
-470
+234
+17
+673
+477
 16
 16
 13.0
@@ -164,7 +240,7 @@ numberOfWasps
 numberOfWasps
 0
 100
-50
+53
 1
 1
 NIL
@@ -184,6 +260,57 @@ numberOfWaspColonies
 1
 NIL
 HORIZONTAL
+
+MONITOR
+5
+138
+62
+183
+female
+count wasps with [gender = \"female\"]
+17
+1
+11
+
+MONITOR
+109
+138
+166
+183
+male
+count wasps with [gender = \"male\"]
+17
+1
+11
+
+PLOT
+6
+204
+206
+354
+waspCount
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -5908279 true "" "plot count wasps"
+
+SWITCH
+22
+407
+156
+440
+show-energy?
+show-energy?
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
