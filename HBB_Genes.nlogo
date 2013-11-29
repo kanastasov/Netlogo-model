@@ -1,7 +1,13 @@
 breed [people person]
-people-own [gender energy] ;;female, maleto 
+people-own 
+[
+  gender ;;female, male 
+  energy ;live
+  hbb_genes ; 4 types of energy {A,A} {A,S} {S,A} {S,S}
+   
+] 
 
-
+;imamgolemhui@gmail.com
 
 to setup
    clear-all ;;clears the interface from the previous setup
@@ -13,22 +19,46 @@ to setup
        setxy random-xcor random-ycor ;random x,y coordinates
        set pen-mode "up"
        ;set label who ;set the count of the person from 0 display it on the interface
-       set energy 10; random (2 * 5)
+       set energy 10; random (2 * 5)     
        ifelse (random 100 < numberOfpeople)
        [ 
          set color   red                  ;;female set to red color
-         set gender "female"       
+         set gender "female" 
+        
        ]        
        [ 
          set color blue                   ;;male set to blue color
          set gender "male"
+        
        ]
-    
-   
-   ;set energy random (2 * 5)
-  
-    
   ]
+  
+;ifelse cmd = "A" [ A-thing ] 
+;[ ifelse cmd = "B" [ B-thing ] 
+;[ ifelse cmd = "C" [ C-thing ] 
+;[ ;; default case 
+;]]] 
+
+
+;   if random 100 < 68
+;   [             
+;     set hbb_genes "A,A"             
+;   ]
+;   
+;   if random 100 < 2
+;   [
+;     set hbb_genes "S,S" 
+;   ]
+;   
+;   if random 100 < 15
+;   [
+;     set hbb_genes "A,S"     
+;   ]
+;   
+;   if random 100 < 15
+;   [
+;     set hbb_genes "S,A" 
+;   ]
 
 
   
@@ -71,19 +101,32 @@ to display-labels
     
   ]
 end
-
+;people with [gender = "female"]
 
 to reproduce
-  ask people ; 2 out of 100 times, to reproduce
-  [
-    if random 100 < 2
+  ;print "reproducing ==>"
+  ;ask people ; 2 out of 100 times, to reproduce
+  ;[
+    if random 100 < 7
     [
-      hatch-people 1
-      [
-       set color green 
-      ] ;; give this birth-energy to the offspring
+       hatch-people 1
+      
+      ifelse gender = "female"
+      [             
+          set color red       
+      ]
+      
+      [    
+         set color blue 
+        
+      ]
+      ;hatch-people 1
+      ;[
+      ; set color green 
+      ;] ;; give this birth-energy to the offspring
     ]
-  ]
+  ;]
+    print "person born"
 end
 
 
@@ -95,10 +138,11 @@ end
 
 
 to death  ;; turtle procedure
-  if random 100 < 3
+  if random 100 < 5
     [
       die
     ]
+    print "person died"
   ;if energy < 0 [ die ]
 end
 @#$#@#$#@
@@ -123,8 +167,8 @@ GRAPHICS-WINDOW
 16
 -16
 16
-1
-1
+0
+0
 1
 ticks
 30.0
