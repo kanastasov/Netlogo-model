@@ -1,10 +1,27 @@
+;;;;;;;;;;;;;;;;;;
+;; Declarations ;;
+;;;;;;;;;;;;;;;;;;
+
+globals
+[
+  ;; number of turtles that are sick
+  num-sick
+  ;; when multiple runs are recorded in the plot, this
+  ;; tracks what run number we're on
+  run-number
+  ;; counter used to keep the model running for a little
+  ;; while after the last turtle gets infected
+  delay
+]
+
+
 breed [people person]
 people-own 
 [
   gender ;;female, male 
   energy ;live
   hbb_genes ; 4 types of energy {A,A} {A,S} {S,A} {S,S}
-   
+  infected? ;;whether people are infected or not
 ] 
 
 ;imamgolemhui@gmail.com
@@ -19,7 +36,8 @@ to setup
        setxy random-xcor random-ycor ;random x,y coordinates
        set pen-mode "up"
        ;set label who ;set the count of the person from 0 display it on the interface
-       set energy 10; random (2 * 5)     
+       set energy 10; random (2 * 5)   
+       set infected? false  
        ifelse (random 100 < numberOfpeople)
        [ 
          set color   red                  ;;female set to red color
@@ -71,18 +89,18 @@ to go
   if ticks >= 300 [ stop ] ;; stop after 2000 ticks
   print "simulating"
  
+   ask people with [ infected? ]
+  [ spread-disease ]
+  set num-sick count turtles with [ infected? ]
+  ;tick
   
-   ask people 
+   ask people  
   [
   move
   reproduce
   death
-;  feed
-;let target one-of out-link-neighbors
-  ;set energy energy - 1
-  ;display-labels
-
   ]
+ 
   
   tick
 end
@@ -129,6 +147,29 @@ to reproduce
     print "person born"
 end
 
+
+to infect
+  ask one-of people [get-sick]
+end
+
+;; set the appropriate variables to make this turtle sick
+to get-sick ;; turtle procedure
+  if not infected?
+  [ set infected? true
+    ;person sick
+  set shape word shape " doctor" ]
+end
+
+
+to spread-disease ;; turtle procedure
+  ask other people-here [ maybe-get-sick ]
+end
+
+to maybe-get-sick ;; turtle procedure
+  ;; roll the dice and maybe get sick
+  if (not infected?) and (random 100 < infection-chance)
+    [ get-sick ]
+end
 
 ;to grow-food  ;; patch procedure
 ; ask patches [ ;; 3 out of 100 times, the patch color is set to green
@@ -223,10 +264,10 @@ NIL
 1
 
 SWITCH
-24
-162
-158
-195
+9
+423
+143
+456
 show-energy?
 show-energy?
 1
@@ -256,23 +297,65 @@ count people with [gender = \"male\"]
 11
 
 PLOT
-3
-209
-203
-359
+6
+253
+206
+403
 Totals
 time
-postion
+infected
 0.0
-50.0
+10.0
 0.0
-100.0
+20.0
 true
 false
-"" ""
+"" "plot num-sick"
 PENS
-"male" 1.0 0 -3844592 true "" "plot count people with [gender = \"male\"]"
-"female" 1.0 0 -7500403 true "" "plot count people with [gender = \"female\"]"
+"default" 1.0 0 -16777216 true "" ""
+
+BUTTON
+19
+159
+82
+192
+NIL
+infect\n
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+9
+207
+181
+240
+infection-chance
+infection-chance
+0
+100
+100
+1
+1
+%
+HORIZONTAL
+
+MONITOR
+112
+156
+170
+201
+infected
+num-sick
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -485,11 +568,43 @@ Polygon -7500403 true true 150 15 15 120 60 285 240 285 285 120
 person
 false
 0
-Circle -7500403 true true 110 5 80
 Polygon -7500403 true true 105 90 120 195 90 285 105 300 135 300 150 225 165 300 195 300 210 285 180 195 195 90
 Rectangle -7500403 true true 127 79 172 94
 Polygon -7500403 true true 195 90 240 150 225 180 165 105
 Polygon -7500403 true true 105 90 60 150 75 180 135 105
+Circle -7500403 true true 110 5 80
+Circle -7500403 true true 110 5 80
+Circle -7500403 true true 110 5 80
+Circle -7500403 true true 110 5 80
+
+person doctor
+false
+0
+Polygon -7500403 true true 105 90 120 195 90 285 105 300 135 300 150 225 165 300 195 300 210 285 180 195 195 90
+Polygon -13345367 true false 135 90 150 105 135 135 150 150 165 135 150 105 165 90
+Polygon -7500403 true true 105 90 60 195 90 210 135 105
+Polygon -7500403 true true 195 90 240 195 210 210 165 105
+Circle -7500403 true true 110 5 80
+Rectangle -7500403 true true 127 79 172 94
+Polygon -1 true false 105 90 60 195 90 210 114 156 120 195 90 270 210 270 180 195 186 155 210 210 240 195 195 90 165 90 150 150 135 90
+Line -16777216 false 150 148 150 270
+Line -16777216 false 196 90 151 149
+Line -16777216 false 104 90 149 149
+Circle -1 true false 180 0 30
+Line -16777216 false 180 15 120 15
+Line -16777216 false 150 195 165 195
+Line -16777216 false 150 240 165 240
+Line -16777216 false 150 150 165 150
+
+person sick
+false
+0
+Circle -13840069 true false 116 41 66
+Rectangle -7500403 true true 105 105 210 225
+Line -7500403 true 105 165 45 120
+Line -7500403 true 210 165 270 120
+Line -7500403 true 150 225 90 300
+Line -7500403 true 165 225 225 285
 
 plant
 false
