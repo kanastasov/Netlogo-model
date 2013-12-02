@@ -12,6 +12,8 @@ globals
   ;; counter used to keep the model running for a little
   ;; while after the last turtle gets infected
   delay
+  lifespan ;;average lifespan of poeople
+  average-offspring ;; the average number of offspring a people can have
 ]
 
 
@@ -22,14 +24,16 @@ people-own
   energy ;live
   hbb_genes ; 4 types of energy {A,A} {A,S} {S,A} {S,S}
   infected? ;;whether people are infected or not
+  immune?;;wehter people are imune
+  age ;;how many weeks old person is
 ] 
 
-;imamgolemhui@gmail.com
 
 to setup
    clear-all ;;clears the interface from the previous setup
    set-default-shape people "person"
    reset-ticks
+   setup-constants
   create-people numberOfpeople
   [
        set size 1.2  ;; easier to see
@@ -37,7 +41,8 @@ to setup
        set pen-mode "up"
        ;set label who ;set the count of the person from 0 display it on the interface
        set energy 10; random (2 * 5)   
-       set infected? false  
+       set infected? false
+       set age random lifespan  
        ifelse (random 100 < numberOfpeople)
        [ 
          set color   red                  ;;female set to red color
@@ -85,8 +90,8 @@ to setup
 end
 
 to go
-  
-  if ticks >= 300 [ stop ] ;; stop after 2000 ticks
+  get-older
+  if ticks >= 2000 [ stop ] ;; stop after 2000 ticks
   print "simulating"
  
    ask people with [ infected? ]
@@ -98,7 +103,7 @@ to go
   [
   move
   reproduce
-  death
+  ;death
   ]
  
   
@@ -125,18 +130,19 @@ to reproduce
   ;print "reproducing ==>"
   ;ask people ; 2 out of 100 times, to reproduce
   ;[
-    if random 100 < 7
+    if random 100 < 1
     [
        hatch-people 1
       
       ifelse gender = "female"
       [             
-          set color red       
+          set color red
+          set age 1       
       ]
       
       [    
          set color blue 
-        
+         set age 1
       ]
       ;hatch-people 1
       ;[
@@ -157,7 +163,7 @@ to get-sick ;; turtle procedure
   if not infected?
   [ set infected? true
     ;person sick
-  set shape word shape " doctor" ]
+  set shape word shape " sick" ]
 end
 
 
@@ -171,6 +177,12 @@ to maybe-get-sick ;; turtle procedure
     [ get-sick ]
 end
 
+to setup-constants
+  set lifespan 100 ;; in weeks
+  set average-offspring 4 
+end
+
+
 ;to grow-food  ;; patch procedure
 ; ask patches [ ;; 3 out of 100 times, the patch color is set to green
 ;    if random 100 < 10 [ set pcolor black ]
@@ -178,13 +190,16 @@ end
 ;end
 
 
-to death  ;; turtle procedure
-  if random 100 < 5
-    [
-      die
-    ]
-    print "person died"
-  ;if energy < 0 [ die ]
+;;people counting variables are advanced.
+to get-older
+  ask people
+  [
+    set age age + 1
+    ;; Turtles die of old age once their age equals the
+    ;; lifespan (set at 1500 in this model).
+    if age > lifespan
+      [ die ]
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -303,16 +318,17 @@ PLOT
 403
 Totals
 time
-infected
+people
+0.0
+5.0
 0.0
 10.0
-0.0
-20.0
 true
-false
-"" "plot num-sick"
+true
+"" ""
 PENS
-"default" 1.0 0 -16777216 true "" ""
+"infected" 1.0 0 -13840069 true "" "plot num-sick"
+"total" 1.0 0 -14070903 true "" "plot count people"
 
 BUTTON
 19
@@ -354,6 +370,17 @@ MONITOR
 infected
 num-sick
 17
+1
+11
+
+MONITOR
+160
+418
+217
+463
+years
+ticks / 52
+1
 1
 11
 
@@ -576,6 +603,7 @@ Circle -7500403 true true 110 5 80
 Circle -7500403 true true 110 5 80
 Circle -7500403 true true 110 5 80
 Circle -7500403 true true 110 5 80
+Polygon -7500403 true true 105 90 120 195 90 285 105 300 135 300 150 225 165 300 195 300 210 285 180 195 195 90
 
 person doctor
 false
@@ -599,12 +627,16 @@ Line -16777216 false 150 150 165 150
 person sick
 false
 0
-Circle -13840069 true false 116 41 66
-Rectangle -7500403 true true 105 105 210 225
-Line -7500403 true 105 165 45 120
-Line -7500403 true 210 165 270 120
-Line -7500403 true 150 225 90 300
-Line -7500403 true 165 225 225 285
+Polygon -7500403 true true 105 90 120 195 90 285 105 300 135 300 150 225 165 300 195 300 210 285 180 195 195 90
+Rectangle -7500403 true true 127 79 172 94
+Polygon -7500403 true true 195 90 240 150 225 180 165 105
+Polygon -7500403 true true 105 90 60 150 75 180 135 105
+Circle -7500403 true true 110 5 80
+Circle -7500403 true true 110 5 80
+Circle -7500403 true true 110 5 80
+Circle -7500403 true true 110 5 80
+Polygon -7500403 true true 120 90 135 195 105 285 120 300 150 300 165 225 180 300 210 300 225 285 195 195 195 120
+Circle -13840069 true false 28 103 152
 
 plant
 false
