@@ -4,211 +4,230 @@
 
 globals
 [
-  ;; number of turtles that are sick
+  ;; number of people that are sick
   num-sick
-  ;; when multiple runs are recorded in the plot, this
-  ;; tracks what run number we're on
-  run-number
-  ;; counter used to keep the model running for a little
-  ;; while after the last turtle gets infected
-  delay
   lifespan ;;average lifespan of poeople
   average-offspring ;; the average number of offspring a people can have
+  geneNumber;a random number to set the genes of the people
 ]
 
+;;;;;;;;;;;;;;;;;;;;;
+;; Bread of people ;;
+;;;;;;;;;;;;;;;;;;;;;
 
 breed [people person]
 people-own 
 [
-  gender ;;female, male 
-  energy ;live
-  hbb_genes ; 4 types of energy {A,A} {A,S} {S,A} {S,S}
-  infected? ;;whether people are infected or not
-  immune?;;wehter people are imune
-  age ;;how many weeks old person is
+  gender ;; female, male 
+  HBB-Genes ; 4 types{A,A} {A,S} {S,A} {S,S}
+  infected? ;; whether people are infected with maleria or not
+  immune?;; wehter people are imune
+  age ;; how many weeks old person is
 ] 
 
+;; the average life expectancy in Ghana is 65 years for people  with A,A
+;; for people with S,A and A,S 53
+;; and 42 for poeple with S,S 
 
 to setup
    clear-all ;;clears the interface from the previous setup
    set-default-shape people "person"
    reset-ticks
-   setup-constants
+   setup-constants ;; lifespan and average-offspring
   create-people numberOfpeople
   [
-       set size 1.2  ;; easier to see
+       set size 1.5  ;; easier to see
        setxy random-xcor random-ycor ;random x,y coordinates
        set pen-mode "up"
-       ;set label who ;set the count of the person from 0 display it on the interface
-       set energy 10; random (2 * 5)   
+       ;set label who ;set the count of the person from 0 display it on the interface 
        set infected? false
-       set age random lifespan  
-       ifelse (random 100 < numberOfpeople)
-       [ 
-         set color   red                  ;;female set to red color
-         set gender "female" 
-        
-       ]        
-       [ 
-         set color blue                   ;;male set to blue color
-         set gender "male"
-        
+       set age random lifespan
+       ;;intial population with malaria 10%
+       set infected? (who < numberOfpeople * 0.1)  
+       
+       ;; generate a number between 1 and 100 
+       set geneNumber random 100
+       if geneNumber <= 68
+       [
+         set HBB-Genes "A,A"
+         set color blue
        ]
-  ]
-  
-;ifelse cmd = "A" [ A-thing ] 
-;[ ifelse cmd = "B" [ B-thing ] 
-;[ ifelse cmd = "C" [ C-thing ] 
-;[ ;; default case 
-;]]] 
-
-
-;   if random 100 < 68
-;   [             
-;     set hbb_genes "A,A"             
-;   ]
-;   
-;   if random 100 < 2
-;   [
-;     set hbb_genes "S,S" 
-;   ]
-;   
-;   if random 100 < 15
-;   [
-;     set hbb_genes "A,S"     
-;   ]
-;   
-;   if random 100 < 15
-;   [
-;     set hbb_genes "S,A" 
-;   ]
-
-
-  
-  display-labels
-  
+        if (geneNumber > 68) and (geneNumber <= 83) 
+       [
+         set HBB-Genes "A,S"
+         set color green
+       ]
+       
+       if (geneNumber > 83) and geneNumber <= 98
+       [
+         set HBB-Genes "S,A"
+         set color green
+       ]
+       if geneNumber > 98
+       [
+         set HBB-Genes "S,S"
+         set color red
+       ]      
+  ] 
 end
 
+;; go is responsible for starting the simulation of the model
 to go
   get-older
   if ticks >= 2000 [ stop ] ;; stop after 2000 ticks
-  print "simulating"
- 
+  print "simulating" 
    ask people with [ infected? ]
   [ spread-disease ]
-  set num-sick count turtles with [ infected? ]
-  ;tick
-  
-   ask people  
+  set num-sick count people with [ infected? ]
+  ask people  
   [
-  move
-  reproduce
-  ;death
-  ]
- 
-  
+    move
+    reproduce
+  ] 
   tick
 end
 
-to move  ;; turtle procedure
+;; move is responsible for moving the poeple on the map
+to move  
   rt random 50
   lt random 50
   fd 1
-  ;set heading 0 ; move the people up 
 end
-
-to display-labels
-  ask people [ set label "" ]
-  if show-energy? [
-    ask people [ set label round energy ]
-    
-  ]
-end
-;people with [gender = "female"]
 
 to reproduce
   ;print "reproducing ==>"
-  ;ask people ; 2 out of 100 times, to reproduce
-  ;[
+  let person1 one-of people
+  let person2 one-of people
+  ask person1 [
+    ; person2 one-of people
+    ;make sure person2 isn't person1
+    while [person1 = person2]
+    [
+     set person2 one-of people 
+    ]  
+  ]
+  let a1 0 ;1st allele of gene
+  ifelse( [HBB-Genes] of person1 = "S,S" or [HBB-Genes] of person1 = "S,A" )
+    [
+      set a1 "S,"
+    ]
+    [
+    set a1 "A,"
+    ]   
+  let a2 0 ; 2nd allele of gene
+    ifelse( [HBB-Genes] of person2 = "S,S" or [HBB-Genes] of person2 = "S,A" ) 
+    [
+      set a2 "S"
+    ]
+    [
+    set a2 "A"
+    ] 
     if random 100 < 1
     [
        hatch-people 1
+      ; a gene is made up of 2 alleles
+      ; possible combinations are: SS, SA, AS and AA
       
-      ifelse gender = "female"
-      [             
-          set color red
-          set age 1       
+      
+      if( (a1 = "A,") and (a2 = "A") ) 
+      [
+        set HBB-Genes "A,A"
+        set color blue
       ]
       
-      [    
-         set color blue 
-         set age 1
+      if( (a1 = "A,") and (a2 = "S") ) 
+      [
+        set HBB-Genes "A,S"
+        set color green
       ]
-      ;hatch-people 1
-      ;[
-      ; set color green 
-      ;] ;; give this birth-energy to the offspring
+      if( (a1 = "S,") and (a2 = "A") ) 
+      [
+        set HBB-Genes "S,A"
+        set color green
+      ]
+      ; sickle cell
+      if( (a1 = "S,") and (a2 = "S") ) 
+      [  
+        set HBB-Genes "S,S"
+        set color red
+      ]
     ]
-  ;]
     print "person born"
 end
 
 
 to infect
-  ask one-of people [get-sick]
+  ask one-of people 
+  [get-sick] ;;infect only with A,A
 end
 
-;; set the appropriate variables to make this turtle sick
-to get-sick ;; turtle procedure
+;; get-sick  is responsible to make a person sick if he is not.
+to get-sick 
   if not infected?
-  [ set infected? true
-    ;person sick
-  set shape word shape " sick" ]
+  [ 
+    set infected? true
+    set shape word shape " sick"
+    set label "M" 
+  ]
 end
 
-
-to spread-disease ;; turtle procedure
-  ask other people-here [ maybe-get-sick ]
+;;spread-desease is responsible to spread the maleria to the other people.
+to spread-disease 
+  ask other people-here
+   [ maybe-get-sick ]
 end
 
+;;maybe-get-sick is responsible for getting a person sick depending which genes he has.
 to maybe-get-sick ;; turtle procedure
-  ;; roll the dice and maybe get sick
-  if (not infected?) and (random 100 < infection-chance)
-    [ get-sick ]
+  ;;control the infection chance according the genes of the people
+  if (not infected?) and (random 100 < A_A-infect) and (HBB-Genes = "A,A")
+      [ get-sick]     
+  if (not infected?) and (random 100 < S_A&A_S_infect) and ((HBB-Genes = "A,S") or (HBB-Genes = "S,A"))
+      [ get-sick]    
+  if (not infected?) and (random 100 < S_S_infect) and (HBB-Genes = "S,S")
+      [ get-sick]       
 end
 
+
+;;setup-constants is responsible to set up the constants in the model.
 to setup-constants
-  set lifespan 100 ;; in weeks
+  set lifespan 300 ;; in weeks
   set average-offspring 4 
 end
 
-
-;to grow-food  ;; patch procedure
-; ask patches [ ;; 3 out of 100 times, the patch color is set to green
-;    if random 100 < 10 [ set pcolor black ]
-;  ]
-;end
-
-
-;;people counting variables are advanced.
+;; get-older is responsible for age of the people and handles
+;; different cases depending on the genes of the people and the malaria
 to get-older
   ask people
   [
     set age age + 1
     ;; Turtles die of old age once their age equals the
-    ;; lifespan (set at 1500 in this model).
+    ;; lifespan (set at 1500 l).
     if age > lifespan
       [ die ]
-  ]
+      ;;malaria case with aa
+      if (infected?) and (HBB-Genes = "A,A") and (random 100 < A_A-dieRate)
+      [
+        die
+      ]
+      if (infected?) and ((HBB-Genes = "A,S") or (HBB-Genes = "S,A")) and (random 100 < S_A&A_S-dieRate)
+      [
+        die
+      ]      
+      if (infected?) and (HBB-Genes = "S,S") and (random 100 < S_S-dieRate)
+      [
+        die
+      ]
+  ] 
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-227
+246
 10
-666
-470
-16
-16
+1101
+886
+32
+32
 13.0
 1
 10
@@ -219,14 +238,14 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
-0
-0
+-32
+32
+-32
+32
 1
-ticks
+1
+1
+weeks
 30.0
 
 SLIDER
@@ -237,8 +256,8 @@ SLIDER
 numberOfpeople
 numberOfpeople
 0
-100
-50
+250
+250
 1
 1
 NIL
@@ -278,44 +297,33 @@ NIL
 NIL
 1
 
-SWITCH
-9
-423
-143
-456
-show-energy?
-show-energy?
-1
-1
--1000
-
 MONITOR
-18
-101
-75
-146
-female
-count people with [gender = \"female\"]
-17
+7
+152
+64
+197
+A,A
+count people with [HBB-Genes = \"A,A\"]
+1
 1
 11
 
 MONITOR
-111
-100
-168
-145
-male
-count people with [gender = \"male\"]
-17
+71
+101
+128
+146
+A,S
+count people with [HBB-Genes = \"A,S\"]
+1
 1
 11
 
 PLOT
-6
-253
-206
-403
+12
+525
+212
+675
 Totals
 time
 people
@@ -327,14 +335,17 @@ true
 true
 "" ""
 PENS
-"infected" 1.0 0 -13840069 true "" "plot num-sick"
-"total" 1.0 0 -14070903 true "" "plot count people"
+"total" 1.0 0 -2064490 true "" "plot count people"
+"A,A " 1.0 0 -14070903 true "" "plot count people with[HBB-genes = \"A,A\"]"
+"A,S & S,A " 1.0 0 -13840069 true "" "plot count people with[HBB-genes = \"A,S\" or HBB-genes = \"S,A\"]"
+"S,S" 1.0 0 -2674135 true "" "plot count people with[HBB-genes = \"S,S\"]"
+"maleria" 1.0 0 -16448764 true "" "plot num-sick"
 
 BUTTON
-19
-159
-82
-192
+90
+474
+180
+507
 NIL
 infect\n
 NIL
@@ -350,23 +361,23 @@ NIL
 SLIDER
 9
 207
-181
+196
 240
-infection-chance
-infection-chance
+A_A-infect
+A_A-infect
 0
 100
-100
+40
 1
 1
 %
 HORIZONTAL
 
 MONITOR
-112
-156
-170
-201
+135
+152
+193
+197
 infected
 num-sick
 17
@@ -374,15 +385,123 @@ num-sick
 11
 
 MONITOR
-160
-418
-217
-463
+13
+472
+70
+517
 years
 ticks / 52
 1
 1
 11
+
+MONITOR
+73
+152
+130
+197
+S,A
+count people with [HBB-Genes = \"S,A\"]
+1
+1
+11
+
+MONITOR
+136
+101
+193
+146
+S,S
+count people with [HBB-Genes = \"S,S\"]
+1
+1
+11
+
+MONITOR
+6
+100
+63
+145
+total
+count people
+1
+1
+11
+
+SLIDER
+10
+250
+226
+283
+S_A&A_S_infect
+S_A&A_S_infect
+0
+100
+10
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+10
+295
+195
+328
+S_S_infect
+S_S_infect
+0
+100
+20
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+12
+341
+184
+374
+A_A-dieRate
+A_A-dieRate
+0
+100
+30
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+12
+384
+184
+417
+S_A&A_S-dieRate
+S_A&A_S-dieRate
+0
+100
+20
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+12
+429
+184
+462
+S_S-dieRate
+S_S-dieRate
+0
+100
+50
+1
+1
+%
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -636,7 +755,10 @@ Circle -7500403 true true 110 5 80
 Circle -7500403 true true 110 5 80
 Circle -7500403 true true 110 5 80
 Polygon -7500403 true true 120 90 135 195 105 285 120 300 150 300 165 225 180 300 210 300 225 285 195 195 195 120
-Circle -13840069 true false 28 103 152
+Line -2674135 false 165 105 120 180
+Line -2674135 false 165 105 180 150
+Line -2674135 false 195 105 180 150
+Line -2674135 false 195 105 225 180
 
 plant
 false
