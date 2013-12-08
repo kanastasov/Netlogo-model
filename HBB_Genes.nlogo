@@ -1,11 +1,41 @@
+; <p>    Problem - Model the spead of maleria in Ghana.
+
+;HBB_Genes is modeling the spread of maleria in Ghana but can be adjusted for any country provided you have the figures.</p>
+
+;<p>This program is the solution for the first assignment for AIP in Teesside University.</p>
+;There are four cases of poeple having different gens.
+;the first one is A,A or normal people 68%
+;the second one is A,S or carrier 15%
+;the third one is S,A also carrier 15%
+;an the fourth one is S,S sequel sell less likely to get 2% 
+
+
+; <p>HBB_Genes is free software: you can redistribute it and/or
+;modify it under the terms of the GNU General Public License as published by
+;the Free Software Foundation, either version 3 of the License, or (at your
+; option) any later version.</p>
+ 
+; <p>This program is distributed in the hope that it will be useful, but
+; WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+; details.</p>
+ 
+; <p>You should have received a copy of the GNU General Public License along
+; with this program. If not, see http://www.gnu.org/licenses/.</p>
+ 
+; <p>Copyright Kiril Anastasov L1087591@live.tees.ac.uk </p>
+
+; -----------------------------------
+
+
+
 ;;;;;;;;;;;;;;;;;;
 ;; Declarations ;;
 ;;;;;;;;;;;;;;;;;;
 
 globals
 [
-  ;; number of people that are sick
-  num-sick
+  num-sick ;; number of people that are sick
   lifespan ;;average lifespan of poeople
   average-offspring ;; the average number of offspring a people can have
   geneNumber;a random number to set the genes of the people
@@ -21,6 +51,7 @@ people-own
   gender ;; female, male 
   HBB-Genes ; 4 types{A,A} {A,S} {S,A} {S,S}
   infected? ;; whether people are infected with maleria or not
+  sick? ;; whether people are sick and have chance to recover or die
   immune?;; wehter people are imune
   age ;; how many weeks old person is
 ] 
@@ -34,6 +65,7 @@ to setup
    set-default-shape people "person"
    reset-ticks
    setup-constants ;; lifespan and average-offspring
+   ;import-pcolors "world1.png"
   create-people numberOfpeople
   [
        set size 1.5  ;; easier to see
@@ -41,9 +73,12 @@ to setup
        set pen-mode "up"
        ;set label who ;set the count of the person from 0 display it on the interface 
        set infected? false
+       set sick? false
        set age random lifespan
        ;;intial population with malaria 10%
-       set infected? (who < numberOfpeople * 0.1)  
+       set infected? (random 100 < malaria) 
+       ;(who < numberOfpeople * 0.1) 
+      
        
        ;; generate a number between 1 and 100 
        set geneNumber random 100
@@ -74,8 +109,12 @@ end
 ;; go is responsible for starting the simulation of the model
 to go
   get-older
-  if ticks >= 2000 [ stop ] ;; stop after 2000 ticks
-  print "simulating" 
+  getSickFromInfected
+  recoverInfected
+  recoverSick 
+  simulateMosquitos
+  if ticks >= 100 [ stop ] ;; stop after 2000 ticks
+  ;print "simulating" 
    ask people with [ infected? ]
   [ spread-disease ]
   set num-sick count people with [ infected? ]
@@ -122,7 +161,9 @@ to reproduce
     [
     set a2 "A"
     ] 
-    if random 100 < 1
+    
+    
+    if random 100 < birthRate
     [
        hatch-people 1
       ; a gene is made up of 2 alleles
@@ -152,46 +193,83 @@ to reproduce
         set color red
       ]
     ]
-    print "person born"
+    ;print "person born"
 end
 
 
 to infect
   ask one-of people 
-  [get-sick] ;;infect only with A,A
+  [get-infected] ;;infect only with A,A
 end
 
-;; get-sick  is responsible to make a person sick if he is not.
-to get-sick 
+;; the chance to get infected by mosquitos on each tick/week
+to simulateMosquitos
+  ;if (random 100 < 95)
+  ;[
+    ask one-of people 
+  [
+    get-infected
+    ] ;
+  
+  ;]
+    
+end
+
+;; get-infected  is responsible to make a person sick if he is not.
+to get-infected 
   if not infected?
   [ 
     set infected? true
-    set shape word shape " sick"
-    set label "M" 
+    set shape "person sick"
+    set label "Infected" 
+  ]
+end
+;; get-sick  is responsible to make a person sick if he is not.
+to get-sick
+  if infected? 
+  [ 
+    set sick? true
+    set shape "person sick"
+    set label "Sick" 
   ]
 end
 
 ;;spread-desease is responsible to spread the maleria to the other people.
 to spread-disease 
   ask other people-here
-   [ maybe-get-sick ]
+   [
+    maybe-get-infected 
+    maybe-get-sick
+    ]
 end
 
-;;maybe-get-sick is responsible for getting a person sick depending which genes he has.
-to maybe-get-sick ;; turtle procedure
+;;maybe-get-infected is responsible for getting a person sick depending which genes he has.
+to maybe-get-infected ;; turtle procedure
   ;;control the infection chance according the genes of the people
   if (not infected?) and (random 100 < A_A-infect) and (HBB-Genes = "A,A")
-      [ get-sick]     
+      [ get-infected]     
   if (not infected?) and (random 100 < S_A&A_S_infect) and ((HBB-Genes = "A,S") or (HBB-Genes = "S,A"))
-      [ get-sick]    
+      [ get-infected]    
   if (not infected?) and (random 100 < S_S_infect) and (HBB-Genes = "S,S")
+      [ get-infected]       
+end
+
+;;maybe-get-infected is responsible for getting a person sick depending which genes he has.
+to maybe-get-sick 
+  ;;control the infection chance according the genes of the people
+  ;;change the get sick chances.....
+  if (not sick?) and (random 100 < A_A-infect) and (HBB-Genes = "A,A")
+      [ get-sick]     
+  if (not sick?) and (random 100 < S_A&A_S_infect) and ((HBB-Genes = "A,S") or (HBB-Genes = "S,A"))
+      [ get-sick]    
+  if (not sick?) and (random 100 < S_S_infect) and (HBB-Genes = "S,S")
       [ get-sick]       
 end
 
 
 ;;setup-constants is responsible to set up the constants in the model.
 to setup-constants
-  set lifespan 300 ;; in weeks
+  set lifespan 150 ;; in weeks
   set average-offspring 4 
 end
 
@@ -201,34 +279,116 @@ to get-older
   ask people
   [
     set age age + 1
-    ;; Turtles die of old age once their age equals the
+    ;; people die of old age once their age equals the
     ;; lifespan (set at 1500 l).
     if age > lifespan
-      [ die ]
-      ;;malaria case with aa
-      if (infected?) and (HBB-Genes = "A,A") and (random 100 < A_A-dieRate)
+      [ 
+        die 
+      ]
+            
+      ;; when people are sick the probability to die depends on the genes of the poeple
+      if (sick?) and (HBB-Genes = "A,A") and (random 100 < A_A-dieRate)
       [
         die
       ]
-      if (infected?) and ((HBB-Genes = "A,S") or (HBB-Genes = "S,A")) and (random 100 < S_A&A_S-dieRate)
+      if (sick?) and ((HBB-Genes = "A,S") or (HBB-Genes = "S,A")) and (random 100 < S_A&A_S-dieRate)
       [
         die
       ]      
-      if (infected?) and (HBB-Genes = "S,S") and (random 100 < S_S-dieRate)
+      if (sick?) and (HBB-Genes = "S,S") and (random 100 < S_S-dieRate)
       [
         die
       ]
+      
   ] 
+end
+
+to recoverInfected
+  ;;case of infected people to get healthy depending on the genes
+      ;;same chance of recovering from sick and infected at the moment
+      
+      ask people
+      [      
+        if (infected?) and (HBB-Genes = "A,A") and (random 100 < A_A-recover)
+        [
+          set infected? false
+          set shape "person"
+          set label ""
+        ]
+        if (infected?) and ((HBB-Genes = "A,S") or (HBB-Genes = "S,A")) and (random 100 < A_S&S_A-recover)
+        [
+          set infected? false
+          set shape "person"
+          set label ""
+        ]      
+        if (infected?) and (HBB-Genes = "S,S") and (random 100 < S_S-recover)
+        [
+          set infected? false
+          set shape "person"
+          set label ""
+        ]
+      ]
+end
+
+to recoverSick 
+  ask people
+  [    
+      ;; when people are sick they can recover and get to state of infected only
+      if (sick?) and (HBB-Genes = "A,A") and (random 100 < A_A-recover-sickness)
+      [
+        set sick? false
+        set infected? true
+        set shape "person sick"
+        set label "Inf"
+      ]
+      if (sick?) and ((HBB-Genes = "A,S") or (HBB-Genes = "S,A")) and (random 100 < A_S&S_A-recover-sickness)
+      [
+        set sick? false
+        set infected? true
+        set shape "person sick"
+        set label "Inf"
+      ]      
+      if (sick?) and (HBB-Genes = "S,S") and (random 100 < S_S-recover-sickness)
+      [
+        set sick? false
+        set infected? true
+        set shape "person sick"
+        set label "Inf"
+      ]
+  ]
+  
+end
+
+to getSickFromInfected
+  ask people
+  [
+      ;;case of infected to get sick depending on the genes
+      if (infected?) and (HBB-Genes = "A,A") and (random 100 < A_A-dieRate)
+      [
+       set sick? true ;die
+       set label "sick"
+      ]
+      if (infected?) and ((HBB-Genes = "A,S") or (HBB-Genes = "S,A")) and (random 100 < S_A&A_S-dieRate)
+      [
+       set sick? true; die
+       set label "sick"
+      ]      
+      if (infected?) and (HBB-Genes = "S,S") and (random 100 < S_S-dieRate)
+      [
+       set sick? true; die
+       set label "sick"
+      ]      
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-246
-10
-1101
-886
+262
+14
+856
+629
 32
 32
-13.0
+9.0
 1
 10
 1
@@ -250,13 +410,13 @@ weeks
 
 SLIDER
 8
-10
+11
 180
-43
+44
 numberOfpeople
 numberOfpeople
 0
-250
+500
 250
 1
 1
@@ -281,9 +441,9 @@ NIL
 1
 
 BUTTON
-94
+76
 53
-171
+153
 86
 simulate
 go
@@ -320,11 +480,11 @@ count people with [HBB-Genes = \"A,S\"]
 11
 
 PLOT
-12
-525
-212
-675
-Totals
+15
+643
+467
+850
+Malaria case
 time
 people
 0.0
@@ -339,13 +499,14 @@ PENS
 "A,A " 1.0 0 -14070903 true "" "plot count people with[HBB-genes = \"A,A\"]"
 "A,S & S,A " 1.0 0 -13840069 true "" "plot count people with[HBB-genes = \"A,S\" or HBB-genes = \"S,A\"]"
 "S,S" 1.0 0 -2674135 true "" "plot count people with[HBB-genes = \"S,S\"]"
-"maleria" 1.0 0 -16448764 true "" "plot num-sick"
+"infected" 1.0 0 -16448764 true "" "plot num-sick"
+"sick" 1.0 0 -7500403 true "" "plot count people with[sick?]"
 
 BUTTON
-90
-474
-180
-507
+158
+54
+248
+87
 NIL
 infect\n
 NIL
@@ -367,7 +528,7 @@ A_A-infect
 A_A-infect
 0
 100
-40
+60
 1
 1
 %
@@ -379,16 +540,16 @@ MONITOR
 193
 197
 infected
-num-sick
+count people with[infected?]
 17
 1
 11
 
 MONITOR
-13
-472
-70
-517
+199
+101
+256
+146
 years
 ticks / 52
 1
@@ -437,7 +598,7 @@ S_A&A_S_infect
 S_A&A_S_infect
 0
 100
-10
+40
 1
 1
 %
@@ -452,7 +613,7 @@ S_S_infect
 S_S_infect
 0
 100
-20
+80
 1
 1
 %
@@ -467,7 +628,7 @@ A_A-dieRate
 A_A-dieRate
 0
 100
-30
+3
 1
 1
 %
@@ -482,7 +643,7 @@ S_A&A_S-dieRate
 S_A&A_S-dieRate
 0
 100
-20
+2
 1
 1
 %
@@ -497,7 +658,159 @@ S_S-dieRate
 S_S-dieRate
 0
 100
-50
+4
+1
+1
+%
+HORIZONTAL
+
+MONITOR
+200
+152
+257
+197
+sick
+count people with[sick?]
+17
+1
+11
+
+SLIDER
+12
+479
+184
+512
+A_A-recover
+A_A-recover
+0
+100
+6
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+11
+520
+183
+553
+A_S&S_A-recover
+A_S&S_A-recover
+0
+100
+20
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+13
+562
+185
+595
+S_S-recover
+S_S-recover
+0
+100
+4
+1
+1
+%
+HORIZONTAL
+
+PLOT
+475
+643
+891
+851
+No Malaria
+people
+time
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"total" 1.0 0 -1664597 true "" "plot count people"
+"A,A" 1.0 0 -13345367 true "" "plot count people with[HBB-genes = \"A,A\"]"
+"A,S&S,A" 1.0 0 -11085214 true "" "plot count people with[HBB-genes = \"A,S\" or HBB-genes = \"S,A\"]"
+"S,S" 1.0 0 -2674135 true "" "plot count people with[HBB-genes = \"S,S\"]"
+
+SLIDER
+11
+602
+183
+635
+malaria
+malaria
+0
+100
+10
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+858
+16
+1030
+49
+birthRate
+birthRate
+0
+100
+1
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+858
+57
+1044
+90
+A_A-recover-sickness
+A_A-recover-sickness
+0
+100
+5
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+859
+100
+1074
+133
+A_S&S_A-recover-sickness
+A_S&S_A-recover-sickness
+0
+100
+19
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+859
+142
+1043
+175
+S_S-recover-sickness
+S_S-recover-sickness
+0
+100
+4
 1
 1
 %
@@ -538,7 +851,7 @@ HORIZONTAL
 
 ## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+solo-disease model from the library.
 @#$#@#$#@
 default
 true
@@ -759,6 +1072,7 @@ Line -2674135 false 165 105 120 180
 Line -2674135 false 165 105 180 150
 Line -2674135 false 195 105 180 150
 Line -2674135 false 195 105 225 180
+Circle -1 true false -30 135 120
 
 plant
 false
